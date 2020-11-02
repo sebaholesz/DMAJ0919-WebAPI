@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Dapper;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Web;
@@ -10,14 +13,9 @@ namespace WebAPI.Models
     {
         public List<Datum> GetTheRecords(string sqlQuery)
         {
-            SqlConnectionStringBuilder connString = new SqlConnectionStringBuilder();
-            connString.UserID = "sa";
-            connString.Password = "Technology3";
-            connString.DataSource = "l2.kaje.ucnit20.eu";
-            connString.IntegratedSecurity = false; // if true then windows authentication
-            connString.InitialCatalog = "Corona";
+            string connString = ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString;
             List<Datum> theReply = new List<Datum>();
-            using (SqlConnection connDB = new SqlConnection(connString.ConnectionString))
+            using (SqlConnection connDB = new SqlConnection(connString))
             {
                 try
                 {
@@ -45,6 +43,35 @@ namespace WebAPI.Models
 
             }
             return (theReply);
+        }
+
+        public string InsertDatumEntry(Datum datum)
+        {
+            IDbConnection _db;
+            _db = new SqlConnection(ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
+
+            try
+            {
+                int rowsAffected = _db.Execute(@"INSERT INTO [dbo].[theStats] values (@countrycode, @date, @cases, @deaths, @recovered)",
+                new { 
+                    countrycode = datum.countrycode,
+                    date = datum.date, 
+                    cases = datum.cases,
+                    deaths = datum.deaths,
+                    recovered = datum.recovered
+                });
+
+                if (rowsAffected > 0)
+                {
+                    return "wow";
+                }
+
+                return "oh no";
+            }
+            catch(SqlException ex)
+            {
+                throw ex;
+            }
         }
     }
 }
